@@ -20,7 +20,6 @@ import random
 #Number of points in the phase space whose trjectory we'll study
 number_of_points = 50
 
-
 def vector_space(beta):
     
     x1, x2 = np.meshgrid(np.linspace(-2, 2, num=20), np.linspace(-2, 2, num=20))
@@ -32,7 +31,6 @@ def vector_space(beta):
     plt.xlabel('x1')
     plt.ylabel('x2')
     plt.show()
-
 
 def f(s,t):
     """
@@ -98,3 +96,4 @@ plt.xlabel("Initial x2")
 plt.ylabel("Time shift in the oscillations")
 plt.title("Time shift obtained when shifting the original positions by 1.0 vertically")
 plt.show()
+
