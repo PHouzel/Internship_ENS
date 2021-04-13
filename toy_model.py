@@ -19,6 +19,8 @@ import random
 
 #Number of points in the phase space whose trjectory we'll study
 number_of_points = 50
+#size of the initial shift in position
+shift = 1.0
 
 def vector_space(beta):
     
@@ -60,7 +62,7 @@ s_list = []
 s_shifted_list = []
 for j in range(len(s0_list)):
     s_list.append(odeint(f,s0_list[j],t))
-    s_shifted_list.append(odeint(f,[s0_list[j][0], s0_list[j][1]+1.0],t))
+    s_shifted_list.append(odeint(f,[s0_list[j][0], s0_list[j][1] + shift],t))
     
 #Plot one case to see the shift
 plt.plot(t,s_list[0][:,1],'b-')
