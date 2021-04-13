@@ -22,4 +22,5 @@ git fetch    -- updates the list of commits
 git pull     -- updates branch by downloading current commits
 
 Content:
+
 toy_model.py: a simple 2D differential equation; computes limit cycle and phase response curve
