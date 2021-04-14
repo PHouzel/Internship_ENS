@@ -164,6 +164,8 @@ for i in range(len(trajectory_list)):
     phase_shift_list.append(recovered_phase_shift)
 
 plt.scatter(phase_list, phase_shift_list, color='red')
+plt.xlabel("Theta")
+plt.ylabel("Phase shift")
 plt.show()
 
 #theoretical PRF
