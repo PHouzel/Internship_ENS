@@ -32,9 +32,11 @@ theta=0
 tmax=100
 nsamples = 100
 t = np.linspace(0,20, nsamples)
+#period
+T0 = (2*math.pi)/(1+alpha*a)
 
 def vector_space(beta):
-    
+    #Plots the vector field linked to the system
     x1, x2 = np.meshgrid(np.linspace(-2, 2, num=20), np.linspace(-2, 2, num=20))
     y1 = beta*x1 - x2 - x1*(x1**2 + x2**2)
     y2 = x1 + beta*x2 - x2*(x1**2 + x2**2)
@@ -127,25 +129,39 @@ plt.legend(["x2", "x2_shifted"])
 plt.title("Example of a phase shift in the oscillations of x2 when shifting the initial position by 1.0 vertically")
 plt.show()
 
+"""
+#Plot alls shifts
+for i in range(len(cycle_point_shifted)):
+    plt.plot(t,trajectory_list[i][:,1],'b-')
+    plt.plot(t,shifted_trajectory_list[i][:,1],'g-')
+    plt.xlabel("t")
+    plt.ylabel("x2")
+    plt.legend(["x2", "x2_shifted"])
+    plt.title("Oscillations of x2")
+    plt.show()
+"""
+
 #Extract the ohase: difference in phase between a reference oscillation and the studied point
-phase_list = []
 dt = np.linspace(-t[-1], t[-1], 2*nsamples-1)
-ref_trajectory = trajectory_list[0][:,1]
+ref_trajectory = trajectory_list[1][:,1]
+
+phase_list = []
 for i in range(len(trajectory_list)):
     #cross correlation between the two signals
-    corr = signal.correlate(trajectory_list[i][:,1], ref_trajectory)/(2*math.pi/(1+alpha*a))
+    corr = signal.correlate(trajectory_list[i][:,1], ref_trajectory)
     #recover the phase: peak of cross correlation array
     recovered_time_shift = dt[corr.argmax()]
-    phase =  recovered_time_shift/(2*math.pi/(1+alpha*a))
-    phase_list.append(phase)
+    recovered_phase_shift = 2*math.pi*(((0.5 + recovered_time_shift/T0) % 1.0) - 0.5)
+    phase_list.append(recovered_phase_shift)
 
 #extract the shift between initial and shifted trajectories
 phase_shift_list = []
 for i in range(len(trajectory_list)):
     corr = signal.correlate(trajectory_list[i][:,1], shifted_trajectory_list[i][:,1])
     recovered_time_shift = dt[corr.argmax()]
-    phase_shift =  recovered_time_shift/(2*math.pi/(1+alpha*a))
-    phase_shift_list.append(phase_shift)
+    #Set phase to be between -pi and pi
+    recovered_phase_shift = 2*math.pi*(((0.5 + recovered_time_shift/T0) % 1.0) - 0.5)
+    phase_shift_list.append(recovered_phase_shift)
 
 plt.scatter(phase_list, phase_shift_list, color='red')
 plt.show()
