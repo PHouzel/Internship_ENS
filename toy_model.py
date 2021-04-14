@@ -16,12 +16,22 @@ import matplotlib.pyplot as plt
 from scipy.integrate import odeint
 import numpy as np
 import random
+from scipy import signal
+import math
 
 #Number of points in the phase space whose trjectory we'll study
 number_of_points = 50
 #size of the initial shift in position
 shift = 1.0
+#parameters in equations
 beta=1
+alpha = 0.1
+a = 10
+theta=0
+#time range
+tmax=100
+nsamples = 100
+t = np.linspace(0,20, nsamples)
 
 def vector_space(beta):
     
@@ -48,7 +58,6 @@ def f(s,t):
     return [dx1dt, dx2dt]
 
 #Plotting the trajectories
-t = np.linspace(0,20)
 s0_list = []
 for i in range(number_of_points):
     #setting random initial points
@@ -58,58 +67,8 @@ for i in range(number_of_points):
     plt.title("Phase space of the toy model and trajectories with beta = 1")
 vector_space(beta=1)
 
-"""
-#shift initial points
-s_list = []
-s_shifted_list = []
-for j in range(len(s0_list)):
-    s_list.append(odeint(f,s0_list[j],t))
-    s_shifted_list.append(odeint(f,[s0_list[j][0], s0_list[j][1] + shift],t))
-    
-"""
-"""
-    
-#Plot one case to see the shift
-plt.plot(t,s_list[0][:,1],'b-')
-plt.plot(t,s_shifted_list[0][:,1],'g-')
-plt.xlabel("t")
-plt.ylabel("x2")
-plt.legend(["x2", "x2_shifted"])
-plt.title("Example of a phase shift in the oscillations of x2 when shifting the initial position by 1.0 vertically")
-plt.show()
-"""
-"""
-#extract the shift
-time_shift_list = []
-for k in range(len(s_list)):
-    """
-    #x2_max = np.max(s_list[k][:,1])
-    #x2_shifted_max = np.max(s_shifted_list[k][:,1])
-"""
-    index_of_x2_max = np.argmax(s_list[k][:,1])
-    index_of_x2_shifted_max = np.argmax(s_shifted_list[k][:,1])
-    
-    theta = t[index_of_x2_max]
-    theta_shifted = t[index_of_x2_shifted_max]
-
-    time_shift_list.append(theta_shifted - theta)
-
-#Extract initial x2 positions
-initial_x2_list = []
-for l in range(len(s0_list)):
-    initial_x2_list.append(s0_list[l][1])
-
-plt.scatter(initial_x2_list, time_shift_list)
-plt.xlabel("Initial x2")
-plt.ylabel("Time shift in the oscillations")
-plt.title("Time shift obtained when shifting the original positions by 1.0 vertically")
-plt.show()
-"""
-
 def limit_cycle(s, t):
     #Plots theoretical limit cycle; take initial position such that dx/dt and dy/dt = 0 and (x,y) =/=0
-    alpha = 1
-    a = 1
     x=s[0]
     y=s[1]
     dxdt = alpha*x*(1 - (x**2 + y**2)) - y*(1 + alpha*a*(x**2 + y**2))
@@ -153,16 +112,53 @@ shifted_trajectory_list = []
 for i in range(len(cycle_point_shifted)):
     shifted_trajectory = odeint(f,cycle_point_shifted[i],t)
     shifted_trajectory_list.append(shifted_trajectory)
-    plt.plot(shifted_trajectory[:,0], shifted_trajectory[:,1], color='blue')
+    plt.plot(shifted_trajectory[:,0], shifted_trajectory[:,1], color='green')
 plt.title("Trajectory of the shifted points")
 vector_space(beta=1)
 
 shifted_trajectory_list = np.array(shifted_trajectory_list)
 
+#Plot a shift example
 plt.plot(t,trajectory_list[0][:,1],'b-')
 plt.plot(t,shifted_trajectory_list[0][:,1],'g-')
 plt.xlabel("t")
 plt.ylabel("x2")
 plt.legend(["x2", "x2_shifted"])
 plt.title("Example of a phase shift in the oscillations of x2 when shifting the initial position by 1.0 vertically")
+plt.show()
+
+#Extract the ohase: difference in phase between a reference oscillation and the studied point
+phase_list = []
+dt = np.linspace(-t[-1], t[-1], 2*nsamples-1)
+ref_trajectory = trajectory_list[0][:,1]
+for i in range(len(trajectory_list)):
+    #cross correlation between the two signals
+    corr = signal.correlate(trajectory_list[i][:,1], ref_trajectory)/(2*math.pi/(1+alpha*a))
+    #recover the phase: peak of cross correlation array
+    recovered_time_shift = dt[corr.argmax()]
+    phase =  recovered_time_shift/(2*math.pi/(1+alpha*a))
+    phase_list.append(phase)
+
+#extract the shift between initial and shifted trajectories
+phase_shift_list = []
+for i in range(len(trajectory_list)):
+    corr = signal.correlate(trajectory_list[i][:,1], shifted_trajectory_list[i][:,1])
+    recovered_time_shift = dt[corr.argmax()]
+    phase_shift =  recovered_time_shift/(2*math.pi/(1+alpha*a))
+    phase_shift_list.append(phase_shift)
+
+plt.scatter(phase_list, phase_shift_list, color='red')
+plt.show()
+
+#theoretical PRF
+sigma = np.linspace(0, 4.5)
+PRF_list = []
+for i in range(len(sigma)):
+    PRF = (((1 - 2*alpha*sigma[i])**0.5)/(2*math.pi)) * math.sin((2*math.pi*theta + 0.5*a*math.log(1 - 2*alpha*sigma[i]))) - a*math.cos(2*math.pi*theta + 0.5*a*math.log(1 - 2*alpha*sigma[i]))
+    PRF_list.append(PRF)
+
+plt.plot(sigma, PRF_list, color='red')
+plt.xlabel("sigma")
+plt.ylabel("PRF(0, sigma)")
+plt.title("Theoretical PRF with a=10, alpha=0.1, theta=0")
 plt.show()
