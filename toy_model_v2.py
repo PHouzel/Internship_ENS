@@ -11,8 +11,9 @@ from numpy import sin, cos, pi
 from datetime import datetime
 from scipy.integrate import odeint
 import matplotlib.pyplot as plt
-from scipy import signal
+from scipy.signal.signaltools import correlate
 from numba import jit
+from math import fmod
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
@@ -46,7 +47,10 @@ def phase_shift(trajectory_1, trajectory_2, t, nsamples, period):
     """
     Gets the phase shift between two trajectories
     """
-    corr = signal.correlate(trajectory_1, trajectory_2)
+    # regularize datasets by subtracting mean and dividing by s.d.
+    trajectory_1 -= trajectory_1.mean(); trajectory_1 /= trajectory_1.std()
+    trajectory_2 -= trajectory_2.mean(); trajectory_2 /= trajectory_2.std()
+    corr = correlate(trajectory_1, trajectory_2)
     dt = linspace(-t[-1], t[-1], 2*nsamples-1)
     recovered_time_shift = dt[corr.argmax()]
     recovered_phase_shift = recovered_time_shift/period
@@ -60,7 +64,7 @@ def main():
     N = 50; phaseArray = linspace(0, 1, N)
 
     xCycle = cos(2*pi*phaseArray); yCycle = sin(2*pi*phaseArray)
-    perturb_x = 1; perturb_y = -1
+    perturb_x = 0.1; perturb_y = 0
     prc_x_1 = zeros(N); prc_x_2 = zeros(N); prc_y_1 = zeros(N); prc_y_2 = zeros(N)
     
     for i in range(0, N):
@@ -88,14 +92,18 @@ def main():
         # And we compute the phase differences
         delta_thetaX = (t[ix_perturbed] - t[ix_free])/period
         delta_thetaY = (t[iy_perturbed] - t[iy_free])/period
-        prc_x_1[i] = delta_thetaX
-        prc_y_1[i] = delta_thetaY
+        delta_thetaX = fmod(delta_thetaX, 1)
+        delta_thetaY = fmod(delta_thetaY, 1)
+        prc_x_1[i] = delta_thetaX 
+        prc_y_1[i] = delta_thetaY 
 
         #Method 2: use cross correlation
         delta_thetaX = phase_shift(pertOrbits[:,0], unpertOrbits[:,0], t, timeSteps, period)
         delta_thetaY = phase_shift(pertOrbits[:,1], unpertOrbits[:,1], t, timeSteps, period)
-        prc_x_2[i] = delta_thetaX
-        prc_y_2[i] = delta_thetaY
+        delta_thetaX = fmod(delta_thetaX, 1)
+        delta_thetaY = fmod(delta_thetaY, 1)
+        prc_x_2[i] = delta_thetaX 
+        prc_y_2[i] = delta_thetaY 
 
     
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
@@ -112,16 +120,17 @@ def main():
     plt.legend(["Using indice of maximum", "Using cross-correlation function"])
     plt.show()
     
-
+"""
     plt.plot()
     plt.plot(phaseArray, prc_y_1, 'r+')
     plt.plot(phaseArray, prc_y_2, 'b.')
-    plt.title('PRC with initial x-shift of {}'.format(perturb_x) + ' and y-shift of {}'.format(perturb_y))
+    plt.title('PRC with initial x-shift of {}'.format(perturb_x) + ' and y-shift of {}'.format(perturb_y)
+              + "; alpha = {}".format(alpha) + ", a = {}".format(a))
     plt.xlabel("$\Theta_Y$")
     plt.ylabel("$\Delta\Theta_Y$")
     plt.legend(["Using indice of maximum", "Using cross-correlation function"])
     plt.show()
-
+"""
     
 if __name__ == '__main__':
     main()
