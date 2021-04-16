@@ -1,6 +1,6 @@
 # Internship_ENS
 
-Code done during an internship project in April-May-June 2021 at ENS under the supervision of Boris Gutkin and Alberto Pérez
+Code done during an internship project in April-May-June 2021 at ENS under the supervision of Boris Gutkin and Alberto Pérez-Cervera
 
 Subject: analysis of noise induced oscillations in neuronal systems.
 
