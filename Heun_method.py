@@ -17,7 +17,7 @@ from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 
-@jit((float64[:])(float64[:], float64, float64, float64),nopython=True)
+@jit(float64[:](float64[:], float64, float64, float64))
 def stuartLandau(z, a, alpha, mu):
     """
     Studied function
@@ -27,7 +27,7 @@ def stuartLandau(z, a, alpha, mu):
     fy = alpha*y*(mu - (x**2 + y**2)) + x*(1 + alpha*a*(x**2 + y**2))
     return array([fx, fy])
 
-@jit((float64[:])(float64[:]),nopython=True)
+@jit(float64[:](float64[:]))
 def noiseFunction(z):
     """
     Added noise
@@ -50,7 +50,7 @@ def vector_space(a, alpha, mu):
     plt.ylabel('y')
     plt.show()
 
-@jit((float64[:])(float64[:], float64, float64, float64, float64, float64),nopython=True)
+@jit(float64[:](float64[:], float64, float64[:], float64, float64, float64), nopython=True)
 def predictor(z, h, eta, a, alpha, mu):
     """
     Computes predictor for Euler integration
@@ -58,7 +58,7 @@ def predictor(z, h, eta, a, alpha, mu):
     pred = z + h*stuartLandau(z, a, alpha, mu) + eta*noiseFunction(z)
     return pred
 
-@jit((float64[:])(float64[:], float64, float64, float64, float64, float64),nopython=True)
+@jit((float64[:])(float64[:], float64, float64[:], float64, float64, float64),nopython=True)
 def update_z(z, h, eta, a, alpha, mu):
     """
     Gives z at t + h from z at t
@@ -67,13 +67,13 @@ def update_z(z, h, eta, a, alpha, mu):
     z_updated = z + 0.5*(stuartLandau(z, a, alpha, mu) + stuartLandau(pred, a, alpha, mu))*h + 0.5*(noiseFunction(z) + noiseFunction(pred))*eta
     return z_updated
 
-@jit(types.Tuple((float64[:], float64[:,:]))(float64, float64, float64, int64, float64, float64),nopython=True)
+@jit(types.Tuple((float64[:], float64[:,:]))(float64, float64, float64, int64, float64, float64), nopython=True)
 def EulerInteg(h, a, alpha, numsteps, phase, mu):
     """
     Integration routine
     """
     #Initial points
-    time = 0
+    time = 0.
     z = array([cos(2*pi*phase), sin(2*pi*phase)])
     
     #Setting up lists
@@ -83,7 +83,7 @@ def EulerInteg(h, a, alpha, numsteps, phase, mu):
     trajectory[0] = z
     
     for i in range(numsteps):
-        eta = array(random.normal(loc=0, scale=sqrt(h), size=1)[0], random.normal(loc=0, scale=sqrt(h), size=1)[0])
+        eta = random.normal(loc=0, scale=sqrt(h), size=2)
 
         z_updated = update_z(z, h, eta, a, alpha, mu)
         
@@ -94,7 +94,7 @@ def EulerInteg(h, a, alpha, numsteps, phase, mu):
         trajectory[i+1] = z
     return time_list, trajectory
 
-@jit(types.Tuple((float64[:], float64[:,:]))(float64, float64, float64, int64, int64, float64, float64),nopython=True)
+@jit(types.Tuple((float64[:], float64[:,:]))(float64, float64, float64, int64, int64, float64, float64), nopython=True)
 def stochastic_average(h, a, alpha, numsteps, numiter, phase, mu):
     """
     The main piece
@@ -102,18 +102,26 @@ def stochastic_average(h, a, alpha, numsteps, numiter, phase, mu):
     """
     #Same times for all trajectories
     times = zeros(numsteps+1)
-    trajectories = zeros((numiter, numsteps+1, 2), dtype=ndarray)
+    stochastic_av = zeros((numsteps+1, 2))
+    #trajectories = zeros((numiter, numsteps+1, 2))
+    for i in range(numiter):
+        times, AverageTraj = EulerInteg(h, a, alpha, numsteps, phase, mu)
+        stochastic_av = stochastic_av + AverageTraj
+    stochastic_av = stochastic_av/numiter
     
-    for i in tqdm(range(numiter)):
+    """
+    times = zeros(numsteps+1)
+    #trajectories = zeros((numiter, numsteps+1, 2))
+    for i in range(numiter):
         times, trajectories[i] = EulerInteg(h, a, alpha, numsteps, phase, mu)
     
-    stochastic_av = zeros((numsteps+1, 2), dtype=ndarray)
+    stochastic_av = zeros((numsteps+1, 2))
     for j in range(numsteps+1):
         average_pos = array([0., 0.])
         for k in range(numiter):
             average_pos = average_pos + trajectories[k][j]
         stochastic_av[j] = average_pos/numiter
-        
+    """
     return times, stochastic_av
 
 #exponential function for fitting
@@ -150,14 +158,15 @@ def find_amplitudes(time, trajectory, sensitivity):
 def main():
     startTime = datetime.now()
 
-    h=0.01; a, alpha = [0.0, 1.0]; numsteps = 10000; numiter = 100; start_phase = random.uniform(-1, 1); mu = 1.0
-    sensitivity = 1. #parameter used to find the peaks; around 1 when limit cycle
+    h=0.01; a, alpha = [0.0, 1.0]; numsteps = 100000; numiter = 1000; start_phase = random.uniform(-1, 1); mu = 1.0
+    sensitivity = 0.9 #parameter used to find the peaks; around 1 when limit cycle
 
     #Example of integration
-    time_list, trajectory = EulerInteg(h, a, alpha, numsteps,  start_phase, mu)
+    time_list, trajectory = EulerInteg(h, a, alpha, numsteps, start_phase, mu)
     plt.plot(trajectory[:,0], trajectory[:,1], color='green')
     plt.title("Typical trajectory with noise")
-    vector_space(a, alpha, mu)
+    plt.show()
+    #vector_space(a, alpha, mu)
 
     plt.plot(time_list, trajectory[:,0], color='green')
     plt.title("Typical oscillations with noise")
@@ -169,7 +178,8 @@ def main():
     
     plt.plot(stochastic_av[:,0], stochastic_av[:,1], color='blue')
     plt.title("Average trajectory with noise")
-    vector_space(a, alpha, mu)
+    plt.show()
+    #vector_space(a, alpha, mu)
     
     times_maxima, maxima, period, params = find_amplitudes(times, stochastic_av[:,0], sensitivity) #error there
     
