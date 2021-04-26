@@ -5,11 +5,12 @@ Created on Thu Apr 22 19:21:34 2021
 
 @author: pierrehouzelstein
 """
-from numpy import array, cos, sin, tan, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid, shape
+from numpy import array, cos, sin, arccos, arcsin, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid, shape
 from scipy import interpolate
 from numba import jit, float64, int64, types
 import matplotlib.pyplot as plt
 from datetime import datetime
+from math import atan2
 from tqdm import tqdm
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
@@ -89,7 +90,8 @@ def EulerInteg(z, h, beta_1, beta_2, numsteps):
         trajectory[i+1] = z
     return time_list, trajectory
 
-
+"""
+#V1: using simple interpolation function
 def compute_mean_phase(initial_z, T, h, N, beta_1, beta_2, isochrone_func):
     #Compute over one period
     numsteps = int(T//h)
@@ -104,30 +106,51 @@ def compute_mean_phase(initial_z, T, h, N, beta_1, beta_2, isochrone_func):
     mean_phase = mean_phase/N
     mean_trajectory = mean_trajectory/N
     return mean_phase[0], mean_trajectory
+"""
 
-def compute_single_shift(initial_z, T, h, N, beta_1, beta_2, pulse, isochrone_func):
+def compute_mean_phase(initial_z, T, h, N, beta_1, beta_2, cos_isochrone_func, sin_isochrone_func):
+    #V2: get cosinus and sinus, and take phase from there
+    #Compute over one period
+    numsteps = int(T//h)
+    #Get mean phase at T
+    mean_phase = 0
+    mean_trajectory = 0
+    for i in range(N):
+        time_list, trajectory = EulerInteg(initial_z, h, beta_1, beta_2, numsteps)
+        #Compute phase of last position
+        cos_theta = cos_isochrone_func(trajectory[-1][0], trajectory[-1][1])
+        sin_theta = sin_isochrone_func(trajectory[-1][0], trajectory[-1][1])
+        theta = atan2(sin_theta, cos_theta)
+        if theta < 0: theta += 2*pi
+        mean_phase += theta
+    mean_phase = mean_phase/N
+    mean_trajectory = mean_trajectory/N
+    return mean_phase, mean_trajectory
+
+
+def compute_single_shift(initial_z, T, h, N, beta_1, beta_2, pulse, cos_isochrone_func, sin_isochrone_func):
     shifted_z = initial_z + pulse
 
-    shifted_mean_phase, shifted_mean_trajectory = compute_mean_phase(shifted_z, T, h, N, beta_1, beta_2, isochrone_func)
-    initial_mean_phase, initial_mean_trajectory = compute_mean_phase(initial_z, T, h, N, beta_1, beta_2, isochrone_func)
+    shifted_mean_phase, shifted_mean_trajectory = compute_mean_phase(shifted_z, T, h, N, beta_1, beta_2, cos_isochrone_func, sin_isochrone_func)
+    initial_mean_phase, initial_mean_trajectory = compute_mean_phase(initial_z, T, h, N, beta_1, beta_2, cos_isochrone_func, sin_isochrone_func)
     
     shift = shifted_mean_phase - initial_mean_phase
     
     return shift % 2*pi, initial_mean_trajectory, shifted_mean_trajectory
 
-def compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrone_func, n_points):
+def compute_PRC(T, h, N, beta_1, beta_2, pulse, cos_isochrone_func, sin_isochrone_func, n_points):
     phase_list = linspace(0, 2*pi, n_points)
     PRC_list = []
     for i in tqdm(range(len(phase_list))):
         z = array([0.3*cos(phase_list[i]), 0.3*sin(phase_list[i])])
-        shift, initial_mean_trajectory, shifted_mean_trajectory = compute_single_shift(z, T, h, N, beta_1, beta_2, pulse, isochrone_func)
+        shift, _, _ = compute_single_shift(z, T, h, N, beta_1, beta_2, pulse, cos_isochrone_func, sin_isochrone_func)
         PRC_list.append(shift)
     return phase_list, array(PRC_list)
 
 def main():
     startTime = datetime.now()
     #h timesteps; betas = constants for function; T = period; N = number of steps used to compute mean phase
-    h=0.1; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 100
+    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 1000
     pulse = array([0.1, 0.]); n_points = 100
     
     #Single integration: example
@@ -157,8 +180,24 @@ def main():
     
     isochrones_cos = cos(isochrones)
     isochrones_sin = sin(isochrones)
-    isochrones_tan = sin(isochrones)/cos(isochrones)
+    isochrones_cos_func = interpolate.interp2d(x, y, isochrones_cos)
+    isochrones_sin_func = interpolate.interp2d(x, y, isochrones_sin)
+
+    phase_list, PRC_list = compute_PRC(0, h, N, beta_1, beta_2, pulse, isochrones_cos_func, isochrones_sin_func, n_points)
+    plt.plot(phase_list, PRC_list, "r+")
+    plt.title("PRC with an initial E-shift of 0.1, initial time")
+    plt.xlabel("$\Theta$")
+    plt.ylabel("$\Delta \Theta$")
+    plt.show()
     
+    phase_list, PRC_list = compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrones_cos_func, isochrones_sin_func, n_points)
+    plt.plot(phase_list, PRC_list, "r+")
+    plt.title("PRC with an initial E-shift of 0.1, after one period")
+    plt.xlabel("$\Theta$")
+    plt.ylabel("$\Delta \Theta$")
+    plt.show()
+    
+    """
     isochrone_func = interpolate.interp2d(x, y, isochrones)
     
     plt.pcolormesh(x, y, isochrones_cos, cmap='gist_rainbow')
@@ -174,14 +213,7 @@ def main():
     plt.ylabel("I")
     cbar=plt.colorbar(label="sin($\Theta$", orientation="vertical")
     plt.show()
-    
-    plt.pcolormesh(x, y, isochrones_tan, cmap='gist_rainbow')
-    plt.title('Isochrones tangents from data)')
-    plt.xlabel("E")
-    plt.ylabel("I")
-    cbar=plt.colorbar(label="tan($\Theta$)", orientation="vertical")
-    plt.show()
-    """
+
     plt.pcolormesh(x, y, isochrones, cmap='gist_rainbow')
     shift, initial_mean_trajectory, shifted_mean_trajectory = compute_single_shift(z_test, T, h, N, beta_1, beta_2, pulse, isochrone_func)
     phase_list = linspace(0, 2*pi, n_points)
