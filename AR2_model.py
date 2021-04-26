@@ -5,7 +5,7 @@ Created on Thu Apr 22 19:21:34 2021
 
 @author: pierrehouzelstein
 """
-from numpy import array, cos, sin, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid
+from numpy import array, cos, sin, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid, shape
 from scipy import interpolate
 from numba import jit, float64, int64, types
 import matplotlib.pyplot as plt
@@ -71,7 +71,7 @@ def EulerInteg(h, beta_1, beta_2, numsteps, phase):
     """
     #Initial points
     time = 0.
-    z = array([cos(phase), sin(phase)])
+    z = array([0.3*cos(phase), 0.3*sin(phase)])
     
     #Setting up lists
     time_list = zeros(numsteps+1)
@@ -97,17 +97,23 @@ def compute_mean_phase(T, h, N, beta_1, beta_2, initial_phase, isochrone_func):
     numsteps = int(T//h)
     #Get mean phase at T
     mean_phase = 0
+    mean_trajectory = 0
     for i in range(N):
         time_list, trajectory = EulerInteg(h, beta_1, beta_2, numsteps, initial_phase)
         #Compute phase of last position
         mean_phase += isochrone_func(trajectory[-1][0], trajectory[-1][1])
+        mean_trajectory += trajectory
     mean_phase = mean_phase/N
-    return mean_phase
+    mean_trajectory = mean_trajectory/N
+    return mean_phase[0], mean_trajectory
 
 def compute_single_shift(T, h, N, beta_1, beta_2, initial_phase, pulse, isochrone_func):
-    shifted_phase = initial_phase + pulse
-    shift = compute_mean_phase(T, h, N, beta_1, beta_2, shifted_phase, isochrone_func) - compute_mean_phase(T, h, N, beta_1, beta_2, initial_phase, isochrone_func)
-    return shift % 2*pi
+    shifted_z = array([0.3*cos(initial_phase), 0.3*sin(initial_phase)]) + pulse
+    shifted_phase = isochrone_func(shifted_z[0], shifted_z[1])[0]
+    shifted_mean_phase, shifted_mean_trajectory = compute_mean_phase(T, h, N, beta_1, beta_2, shifted_phase, isochrone_func)
+    initial_mean_phase, initial_mean_trajectory = compute_mean_phase(T, h, N, beta_1, beta_2, initial_phase, isochrone_func)
+    shift = shifted_mean_phase -  initial_mean_phase
+    return shift % 2*pi, initial_mean_trajectory, shifted_mean_trajectory
 
 def compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrone_func, n_points):
     phase_list = linspace(0, 2*pi, n_points)
@@ -120,6 +126,7 @@ def main():
     startTime = datetime.now()
     #h timesteps; betas = constants for function; T = period; N = numner of steps used to compute mean phase
     h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 100
+    pulse = array([0.1, 0.]); n_points = 100
     
     #Single integration: example
     numsteps = 100000; initial_phase = random.uniform(0, 2*pi)
@@ -142,8 +149,15 @@ def main():
     y = linspace(ym, yp, 80+1)#;  dy = y[1] - y[0]
     x = linspace(xm, xp, 80+1)#;  dx = x[1] - x[0]
     isochrones = loadtxt('./isocronesD0.01')
+    isochrone_func = interpolate.interp2d(x, y, isochrones)
     
     plt.pcolormesh(x, y, isochrones, cmap='gist_rainbow')
+    shift, initial_mean_trajectory, shifted_mean_trajectory = compute_single_shift(T, h, N, beta_1, beta_2, initial_phase, pulse, isochrone_func)
+    phase_list = linspace(0, 2*pi, n_points)
+    plt.plot(0.3*cos(phase_list), 0.3*sin(phase_list), color = 'black')
+    plt.plot(0.3*cos(phase_list) + pulse[0], 0.3*sin(phase_list), color = 'gray')
+    plt.plot(initial_mean_trajectory[:,0], initial_mean_trajectory[:,1])
+    plt.plot(shifted_mean_trajectory[:,0], shifted_mean_trajectory[:,1])
     plt.title('Isochrones from data')
     plt.xlabel("E")
     plt.ylabel("I")
@@ -152,11 +166,9 @@ def main():
     cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
     plt.show()
     
-    isochrone_func = interpolate.interp2d(x, y, isochrones)
-    pulse = 0.2; n_points = 100
     phase_list, PRC_list = compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrone_func, n_points)
     plt.plot(phase_list, PRC_list, color='red')
-    plt.title("PRC with an initial phase shift of {}".format(pulse))
+    plt.title("PRC with an initial E-shift of 0.1")
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.show()
