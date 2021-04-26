@@ -169,6 +169,7 @@ def main():
     plt.xlabel("t")
     plt.ylabel("E")
     plt.show()
+    plt.savefig("AR2_trajectory.jpg")
     
     #Use given data
     #Use given data to get the phase function
@@ -189,6 +190,7 @@ def main():
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.show()
+    plt.savefig("AR2_PRC_0T.jpg")
     
     phase_list, PRC_list = compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrones_cos_func, isochrones_sin_func, n_points)
     plt.plot(phase_list, PRC_list, "r+")
@@ -196,6 +198,7 @@ def main():
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.show()
+    plt.savefig("AR2_PRC_1T.jpg")
     
     """
     isochrone_func = interpolate.interp2d(x, y, isochrones)
