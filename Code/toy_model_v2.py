@@ -94,6 +94,7 @@ def main():
         delta_thetaY = (t[iy_perturbed] - t[iy_free])/period
         delta_thetaX = fmod(delta_thetaX, 1)
         delta_thetaY = fmod(delta_thetaY, 1)
+        if delta_thetaX > 0.5: delta_thetaX = delta_thetaX - 1
         prc_x_1[i] = delta_thetaX 
         prc_y_1[i] = delta_thetaY 
 
@@ -102,6 +103,7 @@ def main():
         delta_thetaY = phase_shift(pertOrbits[:,1], unpertOrbits[:,1], t, timeSteps, period)
         delta_thetaX = fmod(delta_thetaX, 1)
         delta_thetaY = fmod(delta_thetaY, 1)
+        if delta_thetaX > 0.5: delta_thetaX = delta_thetaX - 1
         prc_x_2[i] = delta_thetaX 
         prc_y_2[i] = delta_thetaY 
 
