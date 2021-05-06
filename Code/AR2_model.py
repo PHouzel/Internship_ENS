@@ -163,7 +163,7 @@ def extract_list(initial_list, frac):
 def main():
     startTime = datetime.now()
     #h timesteps; betas = constants for function; T = period; N = number of trajectories used to compute mean phase
-    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 10000
+    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 1000
     pulse = array([0.1, 0.]); n_points = 100
     frac = 4 #for plotting: plot 1 point every frac points
     
@@ -194,6 +194,8 @@ def main():
     #isochrones = loadtxt('./isocronesD0.01')
     
     isochrone = loadtxt('./Data/isocronesD0.01')
+    isostables = loadtxt('./Data/isostablesD0.01')
+    isostables_func = interpolate.interp2d(x, y, isostables)
     isochrones_real = loadtxt('./Data/realValuesD0.01')
     isochrones_im = loadtxt('./Data/imagValuesD0.01')
     isochrones_real_func = interpolate.interp2d(x, y, isochrones_real)
@@ -202,7 +204,7 @@ def main():
     #Plot isochrones and limit cycle from which we take the points
 
     #phase = arctan(isochrones_im/isochrones_real)
-    #plt.pcolormesh(x, y,  phase, cmap='gist_rainbow')
+    #plt.pcolormesh(x, y, phase, cmap='gist_rainbow')
     #shift, initial_mean_trajectory, shifted_mean_trajectory = compute_single_shift(z_test, T, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func)
     plt.pcolormesh(x, y,  isochrone, cmap='gist_rainbow')
     phase_list = linspace(0, 2*pi, n_points)
@@ -220,6 +222,36 @@ def main():
     plt.savefig("./Output_files/isochrones.jpg")
     plt.show()
 
+    #plot isostables and 0-level curve
+    """
+    plt.pcolormesh(x, y, isostables, cmap='gist_rainbow')
+    plt.title('Isostables from data')
+    plt.xlabel("E")
+    plt.ylabel("I")
+    cbar=plt.colorbar(label="Amplitude(x)", orientation="vertical")
+    
+    #0 level
+    x_0 = []; y_0 = []
+    for i in range(len(x)):
+        for j in range(len(y)):
+            if abs(isostables[i][j]) < 0.1:
+                x_0.append(x[j])
+                y_0.append(y[i])
+    #plt.plot(x_0, y_0, 'k+')
+    plt.legend(["0-level"])
+    #cbar.set_ticks([1, 2, 3, 4, 5, 6])
+    #cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
+    """
+    [X, Y] = meshgrid(x, y) 
+    fig,ax = plt.subplots()
+    contourf_ = ax.contourf(X, Y, isostables)
+    cbar = fig.colorbar(contourf_)
+    plt.legend(["0-level"])
+    #cbar.set_ticks([1, 2, 3, 4, 5, 6])
+    #cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
+    plt.savefig("./Output_files/isostables.jpg")
+    plt.show()
+    
     #compute the PRC
     phase_list_0, PRC_list_0 = compute_PRC(0, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func, n_points)
     """
