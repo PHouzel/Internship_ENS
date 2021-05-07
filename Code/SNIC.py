@@ -18,9 +18,12 @@ from datetime import datetime
 @jit(nopython=True)
 def SNIC(z, beta, m):
     x, y = z
-    
-    fx = beta*x - m*y - x*(x**2 + y**2) + ((y**2)/sqrt(x**2 + y**2))
-    fy = m*x + beta*y - y*(x**2 + y**2) - ((x*y)/sqrt(x**2 + y**2))
+    if x ==0 and y==0:
+        fx = 0
+        fy = 0
+    else:
+        fx = beta*x - m*y - x*(x**2 + y**2) + ((y**2)/sqrt(x**2 + y**2))
+        fy = m*x + beta*y - y*(x**2 + y**2) - ((x*y)/sqrt(x**2 + y**2))
     return array([fx,fy])
 
 @jit(nopython=True)
@@ -52,7 +55,7 @@ def EulerInteg(z, h, beta, m, numsteps):
     
     #Setting up lists
     time_list = zeros(numsteps+1)
-    trajectory = zeros((numsteps+1, 2))#, dtype=ndarray)
+    trajectory = zeros((numsteps+1, 2))
     time_list[0] = time
     trajectory[0] = z
     
@@ -123,7 +126,7 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 1000  #number of trajectories over which we average the phase
+    N = 100 #number of trajectories over which we average the phase
     pulse = array([0.1, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
     
@@ -139,11 +142,13 @@ def main():
     isochrones_im_func = interpolate.interp2d(x, y, isochrones_im)
     
     #plot phase space to see if ok
-    plt.pcolormesh(x, y,  isochrone, cmap='gist_rainbow')
+    plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    time_list, trajectory = EulerInteg(array([1.0, 1.0]), h, beta, m, 10000)
+    plt.plot(trajectory[:,0], trajectory[:,1], color='white')
     phase_list = linspace(0, 2*pi, n_points)
     plt.plot(cos(phase_list), sin(phase_list), color = 'black')
     plt.plot(cos(phase_list) + pulse[0], sin(phase_list), color = 'gray')
-    plt.legend(["Initial points", "Shifted points"])
+    plt.legend(["Typical trajectory", "Initial points", "Shifted points"])
     plt.title('SNIC LC (above bifurcation): Isochrones from data')
     plt.xlabel("x")
     plt.ylabel("y")
@@ -152,7 +157,7 @@ def main():
     cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
     plt.savefig("./Data/snic/output/SNIC_LC_isochrones.jpg")
     plt.show()
-    """
+
     #compute PRC
     #reference points
     phase_list_0, PRC_list_0 = compute_PRC(0, h, N, beta, m, pulse, isochrones_real_func, isochrones_im_func, n_points)
@@ -166,13 +171,23 @@ def main():
     plt.savefig("./Data/snic/output/SNIC_LC_PRC.jpg")
     plt.show()
     
+    with open('./Data/snic/output/SNIC_LC_phase_0T.txt', 'w') as output:
+        for i in range(len(phase_list_0)):
+            content = str(phase_list_0[i])
+            output.write(content + " ")    
     with open('./Data/snic/output/SNIC_LC_phase_1T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
+    with open('./Data/snic/output/SNIC_LC_shift_0T.txt', 'w') as output:
+        for i in range(len(PRC_list_0)):
+            content = str(PRC_list_0[i])
+            output.write(content + " ")            
     with open('./Data/snic/output/SNIC_LC_shift_1T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content) 
-    """
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")
+
     #case 2: SN (below bifurcation)
     beta = 0.1; m = 0.9; T = 98.5477384135994
     
@@ -186,10 +201,12 @@ def main():
     
     #plot phase space to see if ok
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    time_list, trajectory = EulerInteg(array([1.0, 1.0]), h, beta, m, 10000)
+    plt.plot(trajectory[:,0], trajectory[:,1], color='white')
     phase_list = linspace(0, 2*pi, n_points)
     plt.plot(cos(phase_list), sin(phase_list), color = 'black')
     plt.plot(cos(phase_list) + pulse[0], sin(phase_list), color = 'gray')
-    plt.legend(["Initial points", "Shifted points"])
+    plt.legend(["Typical trajectory","Initial points", "Shifted points"])
     plt.title('SNIC SN (below bifurcation): Isochrones from data')
     plt.xlabel("x")
     plt.ylabel("y")
@@ -198,7 +215,7 @@ def main():
     cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
     plt.savefig("./Data/snic/output/SNIC_SN_isochrones.jpg")
     plt.show()
-    """
+
     #compute PRC
     #reference points
     phase_list_0, PRC_list_0 = compute_PRC(0, h, N, beta, m, pulse, isochrones_real_func, isochrones_im_func, n_points)
@@ -212,13 +229,23 @@ def main():
     plt.savefig("./Data/snic/output/SNIC_SN_PRC.jpg")
     plt.show()
     
+    with open('./Data/snic/output/snic_SN_phase_0T.txt', 'w') as output:
+        for i in range(len(phase_list_0)):
+            content = str(phase_list_0[i])
+            output.write(content + " ")
     with open('./Data/snic/output/snic_SN_phase_1T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
+    with open('./Data/snic/output/snic_SN_shift_0T.txt', 'w') as output:
+        for i in range(len(PRC_list_0)):
+            content = str(PRC_list_0[i])
+            output.write(content + " ")
     with open('./Data/snic/output/snic_SN_shift_1T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content) 
-"""
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")
+
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
 
 if __name__ == '__main__':

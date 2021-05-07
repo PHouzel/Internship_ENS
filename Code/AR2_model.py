@@ -74,7 +74,7 @@ def EulerInteg(z, h, beta_1, beta_2, numsteps):
     
     #Setting up lists
     time_list = zeros(numsteps+1)
-    trajectory = zeros((numsteps+1, 2))#, dtype=ndarray)
+    trajectory = zeros((numsteps+1, 2))
     time_list[0] = time
     trajectory[0] = z
     
@@ -163,12 +163,11 @@ def extract_list(initial_list, frac):
 def main():
     startTime = datetime.now()
     #h timesteps; betas = constants for function; T = period; N = number of trajectories used to compute mean phase
-    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 1000
+    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 100
     pulse = array([0.1, 0.]); n_points = 100
-    frac = 4 #for plotting: plot 1 point every frac points
     
     #Single integration: example
-    numsteps = 100000; initial_phase = random.uniform(0, 2*pi)
+    numsteps = 10000; initial_phase = random.uniform(0, 2*pi)
     z_test = array([0.3*cos(initial_phase), 0.3*sin(initial_phase)])
     
     time_list, trajectory = EulerInteg(z_test, h, beta_1, beta_2, numsteps)
@@ -265,11 +264,13 @@ def main():
     plt.show()
     """
     with open('./Output_files/phase_0T.txt', 'w') as output:
-        content = str(phase_list_0)
-        output.write(content)
+        for i in range(len(phase_list_0)):
+            content = str(phase_list_0[i])
+            output.write(content + " ")
     with open('./Output_files/shift_0T.txt', 'w') as output:
-        content = str(PRC_list_0)
-        output.write(content)     
+        for i in range(len(PRC_list_0)):
+            content = str(PRC_list_0[i])
+            output.write(content + " ")     
     
     phase_list, PRC_list = compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
@@ -282,11 +283,13 @@ def main():
     plt.show()
     
     with open('./Output_files/phase_1T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
     with open('./Output_files/shift_1T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content)           
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")      
     
     phase_list, PRC_list = compute_PRC(2*T, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
@@ -299,11 +302,13 @@ def main():
     plt.show()
 
     with open('./Output_files/phase_2T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
     with open('./Output_files/shift_2T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content)  
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")
         
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
 

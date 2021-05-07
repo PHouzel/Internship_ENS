@@ -126,7 +126,7 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 100  #number of trajectories over which we average the phase
+    N = 10000  #number of trajectories over which we average the phase
     pulse = array([0.1, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
     
@@ -143,10 +143,12 @@ def main():
     
     #plot phase space to see if ok
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    time_list, trajectory = EulerInteg(array([1.0, 1.0]), h, beta, 10000)
+    plt.plot(trajectory[:,0], trajectory[:,1], color='white')
     phase_list = linspace(0, 2*pi, n_points)
     plt.plot(cos(phase_list), sin(phase_list), color = 'black')
     plt.plot(cos(phase_list) + pulse[0], sin(phase_list), color = 'gray')
-    plt.legend(["Initial points", "Shifted points"])
+    plt.legend(["Typical trajectory", "Initial points", "Shifted points"])
     plt.title('Hopf LC (above bifurcation): Isochrones from data')
     plt.xlabel("x")
     plt.ylabel("y")
@@ -168,13 +170,23 @@ def main():
     plt.legend(["Reference PRC", "PRC at T"])
     plt.savefig("./Data/hopf/output/Hopf_LC_PRC.jpg")
     plt.show()
-    
+
+    with open('./Data/hopf/output/Hopf_LC_phase_0T.txt', 'w') as output:
+        for i in range(len(phase_list_0)):
+            content = str(phase_list_0[i])
+            output.write(content + " ")    
     with open('./Data/hopf/output/Hopf_LC_phase_1T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
+    with open('./Data/hopf/output/Hopf_LC_shift_0T.txt', 'w') as output:
+        for i in range(len(PRC_list_0)):
+            content = str(PRC_list_0[i])
+            output.write(content + " ")
     with open('./Data/hopf/output/Hopf_LC_shift_1T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content) 
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")
 
     #case 2: focus (below bifurcation)
     beta = 0.1; T = 2*pi
@@ -189,10 +201,12 @@ def main():
     
     #plot phase space to see if ok
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    time_list, trajectory = EulerInteg(array([1.0, 1.0]), h, beta, 10000)
+    plt.plot(trajectory[:,0], trajectory[:,1], color='white')
     phase_list = linspace(0, 2*pi, n_points)
     plt.plot(cos(phase_list), sin(phase_list), color = 'black')
     plt.plot(cos(phase_list) + pulse[0], sin(phase_list), color = 'gray')
-    plt.legend(["Initial points", "Shifted points"])
+    plt.legend(["Typical trajectory", "Initial points", "Shifted points"])
     plt.title('Hopf focus (below bifurcation): Isochrones from data')
     plt.xlabel("x")
     plt.ylabel("y")
@@ -215,12 +229,22 @@ def main():
     plt.savefig("./Data/hopf/output/Hopf_focus_PRC.jpg")
     plt.show()
     
+    with open('./Data/hopf/output/Hopf_focus_phase_0T.txt', 'w') as output:
+        for i in range(len(phase_list_0)):
+            content = str(phase_list_0[i])
+            output.write(content + " ")
     with open('./Data/hopf/output/Hopf_focus_phase_1T.txt', 'w') as output:
-        content = str(phase_list)
-        output.write(content)
+        for i in range(len(phase_list)):
+            content = str(phase_list[i])
+            output.write(content + " ")
+    with open('./Data/hopf/output/Hopf_focus_shift_0T.txt', 'w') as output:
+        for i in range(len(PRC_list_0)):
+            content = str(PRC_list_0[i])
+            output.write(content + " ")
     with open('./Data/hopf/output/Hopf_focus_shift_1T.txt', 'w') as output:
-        content = str(PRC_list)
-        output.write(content) 
+        for i in range(len(PRC_list)):
+            content = str(PRC_list[i])
+            output.write(content + " ")
 
 
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
