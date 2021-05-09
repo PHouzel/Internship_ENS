@@ -10,7 +10,7 @@ Above and below Hopf bifurcation
 """
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
-from numba import jit
+from numba import jit, float64, int64, types
 from numpy import array, sqrt, zeros, random, pi, linspace, cos, sin, loadtxt, arctan
 from math import atan2
 from scipy import interpolate
@@ -20,24 +20,26 @@ from datetime import datetime
 
 #Def studied systems
 
-@jit(nopython=True)
+@jit(float64[:](float64[:], float64), nopython=True)
 def Hopf(z, beta):
     x, y = z
     fx = beta*x - y - x*(x**2 + y**2)
     fy = x + beta*y - y*(x**2 + y**2)
     return array([fx,fy])
 
-@jit(nopython=True)
+@jit(float64[:](float64[:]), nopython=True)
 def noiseFunction(z):
     """
     Added noise
     """
-    D = 0.01125
-    gx = sqrt(2*D)
-    gy = sqrt(2*D)
+    #D = 0.1
+    #gx = sqrt(2*D)
+    #gy = sqrt(2*D)
+    gx = 0.1
+    gy = 0.1
     return array([gx, gy])
 
-@jit(nopython=True)
+@jit((float64[:])(float64[:], float64, float64[:], float64), nopython=True)
 def update_z(z, h, eta, beta):
     """
     Gives z at t + h from z at t
@@ -46,7 +48,7 @@ def update_z(z, h, eta, beta):
     z_updated = z + 0.5*( Hopf(z, beta) + Hopf(pred, beta))*h + 0.5*(noiseFunction(z) + noiseFunction(pred))*eta
     return z_updated
 
-@jit(nopython=True)
+@jit(types.Tuple((float64[:], float64[:,:]))(float64[:], float64, float64, int64), nopython=True)
 def EulerInteg(z, h, beta, numsteps):
     """
     Integration routine
@@ -110,7 +112,7 @@ def compute_PRC(T, h, N, beta, pulse, real_isochrone_func, im_isochrone_func, n_
     phase_list = linspace(0, 2*pi, n_points)
     PRC_list = []
     for i in tqdm(range(len(phase_list))):
-        z = array([(phase_list[i]), sin(phase_list[i])])
+        z = array([cos(phase_list[i]), sin(phase_list[i])])
         shift, _, _ = compute_single_shift(z, T, h, N, beta, pulse, real_isochrone_func, im_isochrone_func)
         PRC_list.append(shift)
     return phase_list, array(PRC_list)
@@ -126,10 +128,10 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 10000  #number of trajectories over which we average the phase
+    N = 10000     #number of trajectories over which we average the phase
     pulse = array([0.1, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
-    
+    """
     #case 1: LC (above bifurcation)
     beta = 1; T = 2*pi
     
@@ -138,8 +140,8 @@ def main():
     isochrones_real = loadtxt('./Data/hopf/above/data/realValuesD0.01125')
     isochrones_im = loadtxt('./Data/hopf/above/data/imagValuesD0.01125')
     #interpolate
-    isochrones_real_func = interpolate.interp2d(x, y, isochrones_real)
-    isochrones_im_func = interpolate.interp2d(x, y, isochrones_im)
+    isochrones_real_func = interpolate.interp2d(x, y, isochrones_real, kind = 'cubic')
+    isochrones_im_func = interpolate.interp2d(x, y, isochrones_im, kind = 'cubic')
     
     #plot phase space to see if ok
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
@@ -187,17 +189,17 @@ def main():
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
-
+    """
     #case 2: focus (below bifurcation)
-    beta = 0.1; T = 2*pi
+    beta = -0.1; T = 2*pi
     
     #load data
     isochrone = loadtxt('./Data/hopf/below/data/isocronesD0.01125')
     isochrones_real = loadtxt('./Data/hopf/below/data/realValuesD0.01125')
     isochrones_im = loadtxt('./Data/hopf/below/data/imagValuesD0.01125')
     #interpolate
-    isochrones_real_func = interpolate.interp2d(x, y, isochrones_real)
-    isochrones_im_func = interpolate.interp2d(x, y, isochrones_im)
+    isochrones_real_func = interpolate.interp2d(x, y, isochrones_real, kind = 'cubic')
+    isochrones_im_func = interpolate.interp2d(x, y, isochrones_im, kind = 'cubic')
     
     #plot phase space to see if ok
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
@@ -245,7 +247,6 @@ def main():
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
-
 
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
 
