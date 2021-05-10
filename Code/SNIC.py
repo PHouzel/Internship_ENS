@@ -131,7 +131,7 @@ def main():
     N = 10000 #number of trajectories over which we average the phase
     pulse = array([0.3, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
-    
+
     #case 1: LC (above bifurcation)
     beta = 1; m = 1.1; T = 13.062117491963372
     
@@ -166,36 +166,30 @@ def main():
     phase_list, PRC_list = compute_PRC(T, h, N, beta, m, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
     plt.plot(phase_list, PRC_list, "b+")
-    plt.title("SNIC LC (above bifurcation): PRC with an initial E-shift of 0.1, after one period")
+    plt.title("SNIC LC (above bifurcation): PRC with an initial E-shift of " + str(pulse[0]) + ", after one period")
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.legend(["Reference PRC", "PRC at T"])
-    plt.savefig("./Data/snic/output/SNIC_LC_PRC.jpg")
+    plt.savefig("./Data/snic/output/SNIC_LC_PRC" + str(pulse[0]) + ".jpg")
     plt.show()
     
-    with open('./Data/snic/output/SNIC_LC_phase_0T.txt', 'w') as output:
+    with open('./Data/snic/output/SNIC_LC_phase_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list_0)):
             content = str(phase_list_0[i])
             output.write(content + " ")    
-    with open('./Data/snic/output/SNIC_LC_phase_1T.txt', 'w') as output:
+    with open('./Data/snic/output/SNIC_LC_phase_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list)):
             content = str(phase_list[i])
             output.write(content + " ")
-    with open('./Data/snic/output/SNIC_LC_shift_0T.txt', 'w') as output:
+    with open('./Data/snic/output/SNIC_LC_shift_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list_0)):
             content = str(PRC_list_0[i])
             output.write(content + " ")            
-    with open('./Data/snic/output/SNIC_LC_shift_1T.txt', 'w') as output:
+    with open('./Data/snic/output/SNIC_LC_shift_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
-
-    print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
-
-if __name__ == '__main__':
-    main()
-    
-"""
+    """
     #case 2: SN (below bifurcation)
     beta = 1; m = 0.9; T = 98.5477384135994
     
@@ -237,21 +231,25 @@ if __name__ == '__main__':
     plt.savefig("./Data/snic/output/SNIC_SN_PRC.jpg")
     plt.show()
     
-    with open('./Data/snic/output/snic_SN_phase_0T.txt', 'w') as output:
+    with open('./Data/snic/output/snic_SN_phase_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list_0)):
             content = str(phase_list_0[i])
             output.write(content + " ")
-    with open('./Data/snic/output/snic_SN_phase_1T.txt', 'w') as output:
+    with open('./Data/snic/output/snic_SN_phase_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list)):
             content = str(phase_list[i])
             output.write(content + " ")
-    with open('./Data/snic/output/snic_SN_shift_0T.txt', 'w') as output:
+    with open('./Data/snic/output/snic_SN_shift_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list_0)):
             content = str(PRC_list_0[i])
             output.write(content + " ")
-    with open('./Data/snic/output/snic_SN_shift_1T.txt', 'w') as output:
+    with open('./Data/snic/output/snic_SN_shift_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
+    """
+    print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
 
-"""
+if __name__ == '__main__':
+    main()
+    

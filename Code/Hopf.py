@@ -129,9 +129,9 @@ def main():
     #setting up integration parameters
     h = 0.01 #timestep; 
     N = 10000     #number of trajectories over which we average the phase
-    pulse = array([0.1, 0]) #Perturbation in the phase space
+    pulse = array([0.3, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
-    """
+
     #case 1: LC (above bifurcation)
     beta = 1; T = 2*pi
     
@@ -166,30 +166,30 @@ def main():
     phase_list, PRC_list = compute_PRC(T, h, N, beta, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
     plt.plot(phase_list, PRC_list, "b+")
-    plt.title("Hopf LC (above bifurcation): PRC with an initial E-shift of 0.1, after one period")
+    plt.title("Hopf LC (above bifurcation): PRC with an initial E-shift of " + str(pulse[0]) + ", after one period")
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.legend(["Reference PRC", "PRC at T"])
-    plt.savefig("./Data/hopf/output/Hopf_LC_PRC.jpg")
+    plt.savefig("./Data/hopf/output/Hopf_LC_PRC" + str(pulse[0]) + ".jpg")
     plt.show()
 
-    with open('./Data/hopf/output/Hopf_LC_phase_0T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_LC_phase_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list_0)):
             content = str(phase_list_0[i])
             output.write(content + " ")    
-    with open('./Data/hopf/output/Hopf_LC_phase_1T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_LC_phase_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list)):
             content = str(phase_list[i])
             output.write(content + " ")
-    with open('./Data/hopf/output/Hopf_LC_shift_0T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_LC_shift_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list_0)):
             content = str(PRC_list_0[i])
             output.write(content + " ")
-    with open('./Data/hopf/output/Hopf_LC_shift_1T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_LC_shift_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
-    """
+
     #case 2: focus (below bifurcation)
     beta = -0.1; T = 2*pi
     
@@ -215,7 +215,7 @@ def main():
     cbar=plt.colorbar(label="$\Theta$(x)", orientation="vertical")
     cbar.set_ticks([1, 2, 3, 4, 5, 6])
     cbar.set_ticklabels(["1", "2", "3", "4", "5", "6"])
-    plt.savefig("./Data/hopf/output/Hopf_focus_isochrones.jpg")
+    plt.savefig("./Data/hopf/output/Hopf_focus_isochrones" + str(pulse[0]) + ".jpg")
     plt.show()
 
     #compute PRC
@@ -224,26 +224,26 @@ def main():
     phase_list, PRC_list = compute_PRC(T, h, N, beta, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
     plt.plot(phase_list, PRC_list, "b+")
-    plt.title("Hopf focus (below bifurcation): PRC with an initial E-shift of 0.1, after one period")
+    plt.title("Hopf focus (below bifurcation): PRC with an initial E-shift of "+  str(pulse[0]) + ", after one period")
     plt.xlabel("$\Theta$")
     plt.ylabel("$\Delta \Theta$")
     plt.legend(["Reference PRC", "PRC at T"])
-    plt.savefig("./Data/hopf/output/Hopf_focus_PRC.jpg")
+    plt.savefig("./Data/hopf/output/Hopf_focus_PRC" + str(pulse[0]) + ".jpg")
     plt.show()
     
-    with open('./Data/hopf/output/Hopf_focus_phase_0T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_focus_phase_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list_0)):
             content = str(phase_list_0[i])
             output.write(content + " ")
-    with open('./Data/hopf/output/Hopf_focus_phase_1T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_focus_phase_1T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(phase_list)):
             content = str(phase_list[i])
             output.write(content + " ")
-    with open('./Data/hopf/output/Hopf_focus_shift_0T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_focus_shift_0T' +  str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list_0)):
             content = str(PRC_list_0[i])
             output.write(content + " ")
-    with open('./Data/hopf/output/Hopf_focus_shift_1T.txt', 'w') as output:
+    with open('./Data/hopf/output/Hopf_focus_shift_1T' + str(pulse[0]) + '.txt', 'w') as output:
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")
