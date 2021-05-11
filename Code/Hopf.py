@@ -109,7 +109,7 @@ def compute_single_shift(initial_z, T, h, N, beta, pulse, real_isochrone_func, i
 
 #@jit(nopython=True)
 def compute_PRC(T, h, N, beta, pulse, real_isochrone_func, im_isochrone_func, n_points):
-    phase_list = linspace(0, 2*pi, n_points)
+    phase_list = linspace(0, 2*pi, n_points)[::-1]
     PRC_list = []
     for i in tqdm(range(len(phase_list))):
         z = array([cos(phase_list[i]), sin(phase_list[i])])
@@ -128,7 +128,7 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 10000     #number of trajectories over which we average the phase
+    N = 100    #number of trajectories over which we average the phase
     pulse = array([0.3, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
 

@@ -128,7 +128,7 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 10000 #number of trajectories over which we average the phase
+    N = 100 #number of trajectories over which we average the phase
     pulse = array([0.3, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
 

@@ -32,7 +32,8 @@ def SNIC_theoretical(phase, beta, m):
     return SNIC
 
 #case 1: Hopf above bifurcation
-beta = 1; scale = 1.9
+beta = 1;pulse = 0.3
+scale = 2*pi*pulse
 
 phase_0 = loadtxt('./Data/hopf/output/Hopf_LC_phase_0T0.3.txt')
 PRC_0 = loadtxt('./Data/hopf/output/Hopf_LC_shift_0T0.3.txt')
@@ -53,7 +54,8 @@ plt.savefig("./Data/graphs/Hopf_LC_PRC.jpg")
 plt.show()
 
 #case 2: hopf focus
-beta = -0.1; scale=0.6
+beta = -0.1
+scale = 0.6
 
 phase_0 = loadtxt('./Data/hopf/output/Hopf_focus_phase_0T0.3.txt')
 PRC_0 = loadtxt('./Data/hopf/output/Hopf_focus_shift_0T0.3.txt')
@@ -73,7 +75,7 @@ plt.savefig("./Data/graphs/Hopf_focus_PRC.jpg")
 plt.show()
 
 #Case 3: SNIC lc
-beta = 1; m = 1.1; scale = 1.6
+beta = 1; m = 1.1; scale = 1.5
 
 polar_phase_0 = loadtxt('./Data/snic/output/SNIC_LC_phase_0T0.3.txt')
 PRC_0 = loadtxt('./Data/snic/output/SNIC_LC_shift_0T0.3.txt')
@@ -83,9 +85,9 @@ PRC = loadtxt('./Data/snic/output/SNIC_LC_shift_1T0.3.txt')
 pulse = 0.3
 
 plt.figure(figsize=(9, 11))
-plt.plot(polar_phase/(2*pi), SNIC_theoretical(polar_phase, beta, m), "g-")
-#plt.plot(polar_phase_0/(2*pi), PRC_0, "r-")
-#plt.plot(polar_phase/(2*pi), PRC, "b+")
+plt.plot(polar_phase/1.5, scale*SNIC_theoretical(polar_phase, beta, m), "g-")
+plt.plot(polar_phase_0, PRC_0, "r-")
+plt.plot(polar_phase, PRC, "b+")
 plt.title("SNIC LC (below bifurcation): PRC with an initial E-shift of 0.1, after one period")
 plt.xlabel("$\Theta$")
 plt.ylabel("$\Delta \Theta$")
