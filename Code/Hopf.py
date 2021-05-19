@@ -11,7 +11,7 @@ Above and below Hopf bifurcation
 import warnings
 warnings.filterwarnings("ignore", category=DeprecationWarning) 
 from numba import jit, float64, int64, types
-from numpy import array, sqrt, zeros, random, pi, linspace, cos, sin, loadtxt, arctan
+from numpy import array, sqrt, zeros, random, pi, linspace, cos, sin, loadtxt, arctan, arctan2, mod
 from math import atan2
 from scipy import interpolate
 import matplotlib.pyplot as plt
@@ -109,13 +109,17 @@ def compute_single_shift(initial_z, T, h, N, beta, pulse, real_isochrone_func, i
 
 #@jit(nopython=True)
 def compute_PRC(T, h, N, beta, pulse, real_isochrone_func, im_isochrone_func, n_points):
-    phase_list = linspace(0, 2*pi, n_points)[::-1]
+    phase_list = linspace(0, 2*pi, n_points)
     PRC_list = []
+    phase_list2 = zeros(n_points)
     for i in tqdm(range(len(phase_list))):
         z = array([cos(phase_list[i]), sin(phase_list[i])])
         shift, _, _ = compute_single_shift(z, T, h, N, beta, pulse, real_isochrone_func, im_isochrone_func)
         PRC_list.append(shift)
-    return phase_list, array(PRC_list)
+        real = real_isochrone_func(cos(phase_list[i]), sin(phase_list[i]))
+        im = im_isochrone_func(cos(phase_list[i]), sin(phase_list[i]))
+        phase_list2[i] = mod(arctan2(im, real), 2*pi)
+    return phase_list2, array(PRC_list)
 
 def main():
     startTime = datetime.now()
@@ -128,7 +132,7 @@ def main():
     
     #setting up integration parameters
     h = 0.01 #timestep; 
-    N = 100    #number of trajectories over which we average the phase
+    N = 10000    #number of trajectories over which we average the phase
     pulse = array([0.3, 0]) #Perturbation in the phase space
     n_points = 100 #number of points on the PRC
 

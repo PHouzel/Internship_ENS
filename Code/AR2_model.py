@@ -5,7 +5,7 @@ Created on Thu Apr 22 19:21:34 2021
 
 @author: pierrehouzelstein
 """
-from numpy import array, cos, sin, arccos, arcsin, arctan, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid, shape
+from numpy import array, cos, sin, arccos, arcsin, arctan, pi, zeros, sqrt, random, linspace, loadtxt, meshgrid, shape, mod, arctan2
 from scipy import interpolate
 from numba import jit, float64, int64, types
 import matplotlib.pyplot as plt
@@ -145,11 +145,15 @@ def compute_single_shift(initial_z, T, h, N, beta_1, beta_2, pulse, real_isochro
 def compute_PRC(T, h, N, beta_1, beta_2, pulse, real_isochrone_func, im_isochrone_func, n_points):
     phase_list = linspace(0, 2*pi, n_points)
     PRC_list = []
+    phase_list2 = zeros(n_points)
     for i in tqdm(range(len(phase_list))):
         z = array([0.3*cos(phase_list[i]), 0.3*sin(phase_list[i])])
         shift, _, _ = compute_single_shift(z, T, h, N, beta_1, beta_2, pulse, real_isochrone_func, im_isochrone_func)
         PRC_list.append(shift)
-    return phase_list, array(PRC_list)
+        real = real_isochrone_func(cos(phase_list[i]), sin(phase_list[i]))
+        im = im_isochrone_func(cos(phase_list[i]), sin(phase_list[i]))
+        phase_list2[i] = mod(arctan2(im, real),2*pi)
+    return phase_list2, array(PRC_list)
 
 @jit(nopython=True)
 def extract_list(initial_list, frac):
@@ -163,7 +167,7 @@ def extract_list(initial_list, frac):
 def main():
     startTime = datetime.now()
     #h timesteps; betas = constants for function; T = period; N = number of trajectories used to compute mean phase
-    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 100
+    h=0.01; beta_1, beta_2 = [-0.9606, 1.8188]; T = 16.708; N = 10000
     pulse = array([0.1, 0.]); n_points = 100
     
     #Single integration: example
@@ -192,11 +196,11 @@ def main():
     x = linspace(xm, xp, 80+1)#;  dx = x[1] - x[0]
     #isochrones = loadtxt('./isocronesD0.01')
     
-    isochrone = loadtxt('./Data/isocronesD0.01')
-    isostables = loadtxt('./Data/isostablesD0.01')
+    isochrone = loadtxt('./Data/AR2/isocronesD0.01')
+    isostables = loadtxt('./Data/AR2/isostablesD0.01')
     isostables_func = interpolate.interp2d(x, y, isostables)
-    isochrones_real = loadtxt('./Data/realValuesD0.01')
-    isochrones_im = loadtxt('./Data/imagValuesD0.01')
+    isochrones_real = loadtxt('./Data/AR2/realValuesD0.01')
+    isochrones_im = loadtxt('./Data/AR2/imagValuesD0.01')
     isochrones_real_func = interpolate.interp2d(x, y, isochrones_real)
     isochrones_im_func = interpolate.interp2d(x, y, isochrones_im)
     
@@ -271,7 +275,7 @@ def main():
         for i in range(len(PRC_list_0)):
             content = str(PRC_list_0[i])
             output.write(content + " ")     
-    
+    """
     phase_list, PRC_list = compute_PRC(T, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
     plt.plot(phase_list, PRC_list, "b+")
@@ -290,7 +294,7 @@ def main():
         for i in range(len(PRC_list)):
             content = str(PRC_list[i])
             output.write(content + " ")      
-    
+    """
     phase_list, PRC_list = compute_PRC(2*T, h, N, beta_1, beta_2, pulse, isochrones_real_func, isochrones_im_func, n_points)
     plt.plot(phase_list_0, PRC_list_0, "r-")
     plt.plot(phase_list, PRC_list, "b+")

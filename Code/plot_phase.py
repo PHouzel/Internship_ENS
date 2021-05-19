@@ -110,7 +110,7 @@ def main():
     
     time_list, trajectory = compute_mean_phase(z, T, h, N, beta, m, isochrones_real_func, isochrones_im_func)
     plt.plot(trajectory[:,0], trajectory[:,1], "r+")
-    plt.title("SNIC: Single trajectory")
+    plt.title("SNIC: Mean trajectory")
     plt.xlabel("$x$")
     plt.ylabel("$y$")
     plt.savefig("./Output_files/SNIC_mean_traj.jpg")
