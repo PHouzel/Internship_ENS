@@ -25,16 +25,16 @@ def WilsonCowan(z, t, pulse, tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai,
     fI = (1/tau_i)*(-I + (1/(1 + exp(-a_2))))
     return array([fE,fI])
 
-@jit(float64[:](float64[:], float64), nopython=True)
-def noiseFunction(eta, amplitude):
+@jit(float64[:](float64[:], float64, float64, float64), nopython=True)
+def noiseFunction(eta, amplitude, tau_e, tau_i):
     """
     Added noise amplitude
     """
     #D = 0.1
     #gx = sqrt(2*D)
     #gy = sqrt(2*D)
-    gx = amplitude*eta[0]
-    gy = amplitude*eta[1]
+    gx = (amplitude/tau_e)*eta[0]
+    gy = (amplitude/tau_i)*eta[1]
     return array([gx, gy])
 
 @jit((float64[:])(float64[:], float64, float64, float64[:], float64, float64[:], float64, float64,\
@@ -44,10 +44,10 @@ def update_z(z, t, h, eta, amplitude, pulse, tau_e, tau_i, tau_stim, gee, gei, g
     Gives z at t + h from z at t
     """
     pred = z + h*WilsonCowan(z, t, pulse, tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai)\
-                         + noiseFunction(eta, amplitude)
+                         + noiseFunction(eta, amplitude,tau_e, tau_i)*sqrt(h)
     z_updated = z + 0.5*(WilsonCowan(z, t, pulse, tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai)\
                          + WilsonCowan(pred, t, pulse, tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai))*h\
-                         + noiseFunction(eta, amplitude)
+                         + noiseFunction(eta, amplitude, tau_e, tau_i)*sqrt(h)
     return z_updated
 
 @jit(types.Tuple((float64[:], float64[:,:]))(float64[:], float64, int64, float64, float64[:],\
@@ -82,12 +82,13 @@ def EulerInteg(z, h, numsteps, noise_amplitude, pulse, sigma, tau_e, tau_i,\
         t = time
     return time_list, trajectory
 
-def get_shifted_points(start_x, start_y, h, pulse, sigma, tau_e, tau_i, tau_stim,\
+def get_shifted_points(limit_cycle_data, h, pulse, sigma, tau_e, tau_i, tau_stim,\
                        gee, gei, gie, gii, ae, ai):
     
     numsteps = int(tau_stim//h)
     positions = []
-    
+    start_x = limit_cycle_data[:,0]
+    start_y = limit_cycle_data[:,1]
     for i in range(len(start_x)):
         z = array([start_x[i], start_y[i]])
         _, trajectory = EulerInteg(z, h, numsteps, 0, pulse, sigma, tau_e, tau_i,\
@@ -112,8 +113,10 @@ def compute_mean_phase(initial_z, T, h, N, noise_amplitude, pulse, sigma, tau_e,
         mean_real += real
         mean_im += im
         mean_trajectory = mean_trajectory + trajectory
+    
     mean_phase = atan2(mean_im, mean_real)
-    #if mean_phase < 0: mean_phase += 2*pi
+    if mean_phase < 0: mean_phase += 2*pi
+    
     mean_trajectory = mean_trajectory/N
     return mean_phase, mean_trajectory
 
@@ -128,10 +131,11 @@ def compute_single_shift(initial_z, shifted_z, T, h, N,  noise_amplitude, pulse,
                         noise_amplitude, pulse, sigma, tau_e, tau_i, tau_stim, gee, gei, gie, gii,\
                         ae, ai, real_isochrone_func, im_isochrone_func)
     
-    shift = (shifted_mean_phase - initial_mean_phase)
+    shift = shifted_mean_phase - initial_mean_phase
     
-    if shift < 0: shift += 2*pi
+    if shift < -pi: shift += 2*pi
     if shift > pi: shift += -2*pi
+    
     return shift, initial_mean_trajectory, shifted_mean_trajectory
 
 def compute_PRC(limit_cycle_data, shifted_cycle_data, T, h, N, noise_amplitude, pulse, sigma,\
@@ -141,8 +145,10 @@ def compute_PRC(limit_cycle_data, shifted_cycle_data, T, h, N, noise_amplitude, 
     all_y = limit_cycle_data[:,1]
     shifted_x = shifted_cycle_data[:,0]
     shifted_y = shifted_cycle_data[:,1]
+    phase_list = limit_cycle_data[:,2]
     PRC_list = []
-    phase_list2 = zeros(len(all_x))
+    #phase_list2 = zeros(len(all_x))
+    
     
     for i in tqdm(range(len(all_x))):
         
@@ -152,12 +158,13 @@ def compute_PRC(limit_cycle_data, shifted_cycle_data, T, h, N, noise_amplitude, 
         shift, _, _ = compute_single_shift(z, shifted_z, T, h, N,  noise_amplitude,\
                                            pulse, sigma, tau_e, tau_i, tau_stim, gee, gei, gie,\
                                            gii, ae, ai, real_isochrone_func, im_isochrone_func)
-        PRC_list.append(shift)
-        real = real_isochrone_func(all_x[i], all_y[i])
-        im = im_isochrone_func(all_x[i], all_y[i])
-        phase_list2[i] = mod(arctan2(im, real),2*pi)
 
-    return phase_list2, array(PRC_list)
+        PRC_list.append(shift)
+        #real = real_isochrone_func(all_x[i], all_y[i])
+        #im = im_isochrone_func(all_x[i], all_y[i])
+        #phase_list2[i] = mod(arctan2(im, real), 2*pi)
+
+    return phase_list, array(PRC_list)
 
 
 def main():
@@ -168,9 +175,6 @@ def main():
     isochrones_real = loadtxt('./Data/WilsonCowan/realValuesD0.1')
     isochrones_im = loadtxt('./Data/WilsonCowan/imagValuesD0.1')
     limit_cycle_data = loadtxt('./Data/WilsonCowan/limCycleData0.1')
-    #X and y of the limit cycle
-    start_x = limit_cycle_data[:,0]
-    start_y = limit_cycle_data[:,1]
     
     #interpolate
     #setting up grid for the phase spaces
@@ -178,26 +182,42 @@ def main():
     xp = 1.0;  xm = -0.25
     y = linspace(ym, yp, 100)
     x = linspace(xm, xp, 100)
-    real_isochrone_func = interpolate.interp2d(x, y, isochrones_real, kind = 'cubic')
-    im_isochrone_func = interpolate.interp2d(x, y, isochrones_im, kind = 'cubic')
+    real_isochrone_func = interpolate.interp2d(\
+                    x, y, isochrones_real, kind = 'cubic')
+    im_isochrone_func = interpolate.interp2d(\
+                    x, y, isochrones_im, kind = 'cubic')
     
     #Constants parameters for all simulations
-    h=0.01; N = 1000 #average each trajectory over N periods to get mean phase
+    h=0.01; N = 10 #average each trajectory over N periods to get mean phase
     gee = 10.; gei = -10.; gie = 12.; gii = -10.
     tau_e = 3.; tau_i = 8.; tau_stim = 6.
     ae = -2.; ai = -3.5
-    noise_amplitude = 0.005
+    noise_amplitude = 0.1
     
+    #Trajectory when no perturbation
+    z = array([limit_cycle_data[0][0], limit_cycle_data[0][1]])
+    numsteps = 10000; sigma = 0.13
+    pulse =array([0., 0.])
+    time_list, trajectory = EulerInteg(z, h, numsteps, noise_amplitude, pulse, sigma,\
+                                       tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai)
+    
+    plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    plt.plot(trajectory[:,0], trajectory[:,1], color='white')
+    plt.show()
+    
+    plt.plot(time_list, trajectory[:,0], "k-")
+    plt.plot(time_list, trajectory[:,1], "r-")
+    plt.show()
     #Simulation #1 (fig 2e): parameters
-    T = 33.126711029860324
+    T = 33.126711029860324; T = 100
     sigma = 0.13
-    S0 = 10.; theta = 85*(pi/180)
+    S0 = 1.; theta = 85*(pi/180)
     pulse = array([S0*cos(theta), S0*sin(theta)])
     
     #get shift
-    shifted_positions = get_shifted_points(start_x, start_y, h, pulse, sigma, tau_e, tau_i, tau_stim,\
+    shifted_positions = get_shifted_points(limit_cycle_data, h, pulse, sigma, tau_e, tau_i, tau_stim,\
                                            gee, gei, gie, gii, ae, ai)
-        
+
     #get example trajectory: parameters
     z = array([shifted_positions[0][0], shifted_positions[0][1]])
     pulse = array([0., 0.]) #impulsion has waded by the time the system is completely shifted
@@ -206,6 +226,10 @@ def main():
     time_list, trajectory = EulerInteg(z, h, numsteps, noise_amplitude, pulse, sigma,\
                                        tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai)
 
+    plt.plot(time_list, trajectory[:,0], "k-")
+    plt.plot(time_list, trajectory[:,1], "r-")
+    plt.show()
+    
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
     plt.plot(trajectory[:,0], trajectory[:,1], color='white')
     plt.plot(limit_cycle_data[:,0], limit_cycle_data[:,1], color = 'black')
@@ -229,7 +253,7 @@ def main():
     phase_list, PRC_list = compute_PRC(limit_cycle_data, shifted_positions, T, h, N,\
                                 noise_amplitude, pulse, sigma, tau_e, tau_i, tau_stim,\
                                 gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func)
-        
+    
     plt.plot(phase_list_0, PRC_list_0, "r+")
     plt.plot(phase_list, PRC_list, "b.")
     plt.title("Wilson-Cowan: PRC after one period")
