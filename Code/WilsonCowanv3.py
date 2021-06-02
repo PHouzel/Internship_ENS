@@ -169,7 +169,7 @@ def main():
     isochrone = loadtxt('./data/WilsonCowan/isocronesD0.1')
     isochrones_real = loadtxt('./data/WilsonCowan/realValuesD0.1')
     isochrones_im = loadtxt('./data/WilsonCowan/imagValuesD0.1')
-    limit_cycle_data = loadtxt('./data/WilsonCowan/limCycleData0.1')[::8]
+    limit_cycle_data = loadtxt('./data/WilsonCowan/limCycleData0.1')[::5]
     grad_x = loadtxt('./data/WilsonCowan/gradTheta_x.txt')
     grad_y = loadtxt('./data/WilsonCowan/gradTheta_y.txt')
     
@@ -191,7 +191,7 @@ def main():
                     x, y, grad_y, kind = 'cubic')
     
     #Constants parameters for all simulations
-    h=0.01; N = 100 #average each trajectory over N periods to get mean phase
+    h=0.01; N = 1000 #average each trajectory over N periods to get mean phase
     gee = 10.; gei = -10.; gie = 12.; gii = -10.
     tau_e = 3.; tau_i = 8.; tau_stim = 6.
     ae = -2.; ai = -3.5
@@ -203,7 +203,8 @@ def main():
     #Fig. 3b: σ = 0.2–0.5, θ = 80°, S0 = 0.4, 1.6, 3 and 12
     #fig 3d: σ = 0.4–0.6, θ = 60°, S0 = 0.5, 2.2, 4.1 and 8
     sigma = 0.4
-    S0 = 1.; theta = 60*(pi/180)
+    #S0 = 1.6; theta = 80*(pi/180)
+    S0 = 2.2; theta = 60*(pi/180)
     pulse = array([S0*cos(theta), S0*sin(theta)])
     
     #get shift

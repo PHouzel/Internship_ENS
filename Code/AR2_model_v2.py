@@ -134,6 +134,17 @@ def main():
     limit_cycle_data = loadtxt('./data/AR2/limCycleData0.01')
     
     
+    
+    iso_0 = loadtxt("./data/AR2/LC/isoData0.0")
+    iso_001 = loadtxt("./data/AR2/LC/isoData0.001")
+    iso_002 = loadtxt("./data/AR2/LC/isoData0.002")
+    iso_0005 = loadtxt("./data/AR2/LC/isoData0.0005")
+    iso_0001 = loadtxt("./data/AR2/LC/isoData-0.0001")
+    iso_0002 = loadtxt("./data/AR2/LC/isoData-0.0002")
+    iso_00024 = loadtxt("./data/AR2/LC/isoData-0.00024")
+    
+    limit_cycle_data = iso_0001
+    
     #interpolate
     #setting up grid for the phase spaces
     yp = 0.5; ym = -0.5
@@ -150,20 +161,41 @@ def main():
     beta_1, beta_2 = [-0.9606, 1.8188]
     T = 16.70847735002074
     noise_amplitude = 0.01
-    pulse = array([0.025, 0.])
+    pulse = array([0.025, 0.025])
     
     limit_cycle_shifted = get_shifted_points(limit_cycle_data, h, pulse, beta_1, beta_2)
     
     #Plot one example
-    z = array([limit_cycle_shifted [0][0], limit_cycle_shifted [0][1]])
+    #z = array([limit_cycle_shifted [0][0], limit_cycle_shifted [0][1]])
     numsteps = 15000
-    time_list, trajectory = EulerInteg(z, h, noise_amplitude, beta_1, beta_2, numsteps)
+    #time_list, trajectory = EulerInteg(z, h, noise_amplitude, beta_1, beta_2, numsteps)
         
     plt.pcolormesh(x, y, isochrone, cmap='gist_rainbow')
+    
+    plt.plot(iso_0[:,0], iso_0[:,1], color = 'black')
+    plt.plot(iso_0[:,0] + pulse[0], iso_0[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_001[:,0], iso_001[:,1], color = 'black')
+    plt.plot(iso_001[:,0] + pulse[0], iso_001[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_002[:,0], iso_002[:,1], color = 'black')
+    plt.plot(iso_002[:,0] + pulse[0], iso_002[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_0005[:,0], iso_0005[:,1], color = 'black')
+    plt.plot(iso_0005[:,0] + pulse[0], iso_0005[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_0001[:,0], iso_0001[:,1], color = 'black')
+    plt.plot(iso_0001[:,0] + pulse[0], iso_0001[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_0002[:,0], iso_0002[:,1], color = 'black')
+    plt.plot(iso_0002[:,0] + pulse[0], iso_0002[:,1] + pulse[1], color = 'grey')
+    
+    plt.plot(iso_00024[:,0], iso_00024[:,1], color = 'black')
+    plt.plot(iso_00024[:,0] + pulse[0], iso_00024[:,1] + pulse[1], color = 'grey')
     #plt.plot(trajectory[:,0], trajectory[:,1], color='white')
-    plt.plot(limit_cycle_data[:,0], limit_cycle_data[:,1], color = 'black')
-    plt.plot(limit_cycle_shifted[:,0], limit_cycle_shifted[:,1], color = 'gray')
-    plt.legend(["Initial points", "Shifted points"])
+    #plt.plot(limit_cycle_data[:,0], limit_cycle_data[:,1], color = 'black')
+    #plt.plot(limit_cycle_shifted[:,0], limit_cycle_shifted[:,1], color = 'gray')
+    plt.legend(["Initial limit cycles", "Shifted limit cycles"])
     plt.title('AR2 model: phase plane')
     plt.xlabel("E")
     plt.ylabel("I")
