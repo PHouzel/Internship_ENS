@@ -90,11 +90,13 @@ def compute_single_mean_phase(initial_z, T, h, N, noise_amplitude, pulse, sigma,
     mean_trajectory = 0
     mean_variance_x = 0
     mean_variance_y = 0
-    mean_variance = 0
+    mean_variance_stoch = 0
+    phase_list = zeros(N)
     for i in range(N):
         time_list, trajectory = EulerInteg(initial_z, h, numsteps, noise_amplitude, pulse, sigma, tau_e,\
                                            tau_i, tau_stim, gee, gei, gie, gii, ae, ai)
 
+        
         #Compute phase of last position
         real = real_isochrone_func(trajectory[-1][0], trajectory[-1][1])
         im = im_isochrone_func(trajectory[-1][0], trajectory[-1][1])
@@ -103,6 +105,11 @@ def compute_single_mean_phase(initial_z, T, h, N, noise_amplitude, pulse, sigma,
         mean_trajectory = mean_trajectory + trajectory
         
         #Variance
+        #Theoretical
+        phase_list[i]= atan2(im, real)
+        if phase_list[i]< 0: phase_list[i] += 2*pi
+        if phase_list[i]< 0: phase_list[i] += 2*pi
+
         #Separate x and y trajectories
         x_traj = trajectory[:,0]
         y_traj = trajectory[:,1]
@@ -110,26 +117,26 @@ def compute_single_mean_phase(initial_z, T, h, N, noise_amplitude, pulse, sigma,
         for i in range(len(x_traj)):
             x_traj[i]= grad_x_func(x_traj[i], y_traj[i])
             y_traj[i]= grad_y_func(x_traj[i], y_traj[i])
-        #Multiply by noise and square each element
-        x_traj = square(0.1*noise_amplitude*x_traj)
-        y_traj = square(0.1*noise_amplitude*y_traj)
+        #Multiply by D and square each element
+        #noise : sqrt(2D) = noise amplitude so D = (noise amplitude)^2/2
+        D = ((noise_amplitude)**2)/2
+        x_traj = square(D*x_traj)
+        y_traj = square(D*y_traj)
         #Integrate
-        #mean_variance_x += sum(x_traj)
-        #mean_variance_y += sum(y_traj)
         mean_variance_x += trapz(x_traj, dx = h)
         mean_variance_y += trapz(y_traj, dx = h)
-    
+
     mean_phase = atan2(mean_im, mean_real)
     if mean_phase < 0: mean_phase += 2*pi
     mean_trajectory = mean_trajectory/N
     
     mean_variance_x = mean_variance_x/N
     mean_variance_y =mean_variance_y/N
-    mean_variance = mean_variance_x + mean_variance_y
+    mean_variance_stoch = mean_variance_x + mean_variance_y
     
-    #variance = sum(square(phase_list - mean_phase))/N
+    mean_variance_theo = sum(square(phase_list - mean_phase))/N
     
-    return mean_phase, mean_trajectory, mean_variance
+    return mean_phase, mean_trajectory, mean_variance_stoch, mean_variance_theo
 
 def compute_mean_phases(limit_cycle_data, T, h, N, noise_amplitude, pulse, sigma,\
                 tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func, grad_x_func, grad_y_func):
@@ -137,16 +144,18 @@ def compute_mean_phases(limit_cycle_data, T, h, N, noise_amplitude, pulse, sigma
     all_x = limit_cycle_data[:,0]
     all_y = limit_cycle_data[:,1]
     phase_list = zeros(len(all_x))
-    variance_list = zeros(len(all_x))
+    variance_list_stoch = zeros(len(all_x))
+    variance_list_theo = zeros(len(all_x))
 
     for i in tqdm(range(len(all_x))):
         z = array([all_x[i], all_y[i]])
-        mean_phase,_, mean_variance= compute_single_mean_phase(z, T, h, N, noise_amplitude, pulse, sigma, tau_e, tau_i, tau_stim,\
+        mean_phase,_, mean_variance_stoch, mean_variance_theo = compute_single_mean_phase(z, T, h, N, noise_amplitude, pulse, sigma, tau_e, tau_i, tau_stim,\
                 gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func, grad_x_func, grad_y_func)
         phase_list[i] = mean_phase
-        variance_list[i] = mean_variance
+        variance_list_stoch[i] = mean_variance_stoch
+        variance_list_theo[i] = mean_variance_theo
 
-    return phase_list, variance_list
+    return phase_list, variance_list_stoch, variance_list_theo
 
 def get_shifted_points(limit_cycle_data, h, pulse, sigma, tau_e, tau_i, tau_stim,\
                        gee, gei, gie, gii, ae, ai):
@@ -203,8 +212,8 @@ def main():
     #Fig. 3b: σ = 0.2–0.5, θ = 80°, S0 = 0.4, 1.6, 3 and 12
     #fig 3d: σ = 0.4–0.6, θ = 60°, S0 = 0.5, 2.2, 4.1 and 8
     sigma = 0.4
-    #S0 = 1.6; theta = 80*(pi/180)
-    S0 = 2.2; theta = 60*(pi/180)
+    S0 = 1.6; theta = 80*(pi/180)
+    #S0 = 2.2; theta = 60*(pi/180)
     pulse = array([S0*cos(theta), S0*sin(theta)])
     
     #get shift
@@ -235,8 +244,9 @@ def main():
     
     #Get PRC
     initial_theta = limit_cycle_data[:,2]
-    theta_perturbed, variance_list_perturbed = compute_mean_phases(limit_cycle_data, T, h, N, noise_amplitude, pulse, sigma,\
-                tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func, grad_x_func, grad_y_func)
+    theta_perturbed, mean_trajectory, variance_list_perturbed_stoch,\
+        variance_list_perturbed_theo = compute_mean_phases(limit_cycle_data, T, h, N, noise_amplitude, pulse, sigma,\
+        tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func, grad_x_func, grad_y_func)
     theta_free = initial_theta #only if integrating over t = n*T; loss in precision but faster computing
     #theta_free, variance_list_free = compute_mean_phases(limit_cycle_data, T, h, N, noise_amplitude, 0*pulse, sigma,\
                 #tau_e, tau_i, tau_stim, gee, gei, gie, gii, ae, ai, real_isochrone_func, im_isochrone_func)
@@ -244,12 +254,21 @@ def main():
     #plt.plot(initial_theta, variance_list_perturbed)
     #plt.errorbar(initial_theta, theta_perturbed, yerr = variance_list_perturbed)
     plt.plot(initial_theta, theta_perturbed, "b+")
-    plt.fill_between(initial_theta, theta_perturbed+variance_list_perturbed, theta_perturbed-variance_list_perturbed)
+    plt.fill_between(initial_theta, theta_perturbed + sqrt(variance_list_perturbed_stoch), theta_perturbed - sqrt(variance_list_perturbed_stoch))
     plt.plot(initial_theta, theta_free, "r+")
     plt.plot(initial_theta, theta_perturbed-theta_free, "g+")
     plt.title("Phases and PRC of the Wilson-Cowan model")
     plt.legend(["Final phases of perturbed points", "Final phases of unperturbed points", "PRC"])
     plt.savefig("./data/WilsonCowan/output/WilsonCowan_PRC_S=" + str(S0) + ".jpg")
+    plt.show()
+    
+    plt.plot(initial_theta, theta_perturbed, "b+")
+    plt.fill_between(initial_theta, theta_perturbed + sqrt(variance_list_perturbed_theo), theta_perturbed- sqrt(variance_list_perturbed_theo))
+    plt.plot(initial_theta, theta_free, "r+")
+    plt.plot(initial_theta, theta_perturbed-theta_free, "g+")
+    plt.title("Phases and PRC of the Wilson-Cowan model")
+    plt.legend(["Final phases of perturbed points", "Final phases of unperturbed points", "PRC"])
+    plt.savefig("./data/WilsonCowan/output/WilsonCowan_PRC_S=" + str(S0) + "_var_theo.jpg")
     plt.show()
 
     with open('./data/WilsonCowan/output/WilsonCowan_pert_phase_S=' +  str(S0) + '.txt', 'w') as output:
@@ -272,9 +291,14 @@ def main():
             content_1 = str(shifted_positions[i][0])
             content_2 = str(shifted_positions[i][1])
             output.write(content_1 + " " + content_2  + "\n")
-    with open('./data/WilsonCowan/output/WilsonCowen_variance_S=' +  str(S0) + '.txt', 'w') as output:
-        for i in range(len(variance_list_perturbed)):
-            content = str(variance_list_perturbed[i])
+    with open('./data/WilsonCowan/output/WilsonCowen_variance_stoch_S=' +  str(S0) + '.txt', 'w') as output:
+        for i in range(len(variance_list_perturbed_theo)):
+            content = str(variance_list_perturbed_theo[i])
+            output.write(content + " ")
+            
+    with open('./data/WilsonCowan/output/WilsonCowen_variance_theo_S=' +  str(S0) + '.txt', 'w') as output:
+        for i in range(len(variance_list_perturbed_stoch)):
+            content = str(variance_list_perturbed_stoch[i])
             output.write(content + " ")
             
     print('\tiniTime: %s\n\tendTime: %s' % (startTime, datetime.now()))
